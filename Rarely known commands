@@ -1,0 +1,70 @@
+Somewhat obscure UNIX commands
+
+column: create columns from text input
+tr: translate/substitute/delete input
+join: like a database join but for text
+comm: file comparison like a db join
+paste: put lines in a file next to each other
+rs: reshape arrays
+jot: generate data
+expand: replace spaces and/or tabs
+time: track time and resourcing
+watch: execute something on a schedule in realtime
+xargs: execute something on all inputs
+iftop: visually show network traffic
+jnettop a more detailed iftop
+htop: show system stats more powerfully
+xxd: manipulate files in hex
+mtr: powerful traceroute replacement
+mdfind: osx find replacement that uses spotlight
+brew: osx package manager
+df: disk free
+du: disk usage
+iotop: i/o stats
+dig: dns queries
+host: dns queries
+man ascii: lookup your ascii
+sshfs: mount a directory through ssh
+wget: get w’s
+dstat: powerful system statistics
+tmux: a better screen
+jq: command line JSON parsing
+pushd: push your pwd to a stack
+popd: pop pwd off your stack
+lsof: godlike system information [*]
+ncat: nmap-based replacement for nc
+fuser: kills locking processes
+vim: attack yourself
+tac: cat in reverse
+slurm: network interface stats
+rename: change spaces to underscores in names
+bmon: a simple bandwidth monitor
+open .: in osx, open finder in the current dir
+lsmod: show kernel modules
+printf: change the format of output
+timeout: execute something and kill it soon after
+disown: protect a job from disconnect
+fc: edit your last command in your editor and execute it
+sudo !!: repeat last command with sudo
+tee: send output to stdout as well
+pgrep: greps through processes
+pkill: kills processes based on search
+fmt: text formatter
+multitail: see logs in separate views
+bc: an interactive calculator language
+apropos: info on commands
+strace: the uber debug tool
+man units: interesting
+pstree: shows processes in a…well…tree
+pv: a progress bar for piped commands
+ddate: wtf
+zgrep: grep within compressed files
+zless: look at compressed files
+nping: nmap-based custom packet creation
+readlink: read values of links
+iostate: look at your disk i/o
+atop: another top
+split: break a file into pieces
+dd: disk writing
+ndiff: show differences in nmap scans
+ss: socket statistics (show apps using the Internet)
