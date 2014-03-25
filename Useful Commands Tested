@@ -1,2 +1,8 @@
 find process that are listening or running on particular port:
+
   netstat -tulpn
+
+
+Delete all pyc files in a project:
+
+  find . -name "*.pyc" -exec rm -f {} \;
