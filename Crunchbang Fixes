@@ -1,5 +1,17 @@
 
 
+FIX KEYBOARD MAPPING:
+---------------------
+
+Change keyboard mapping to US
+
+  $ setxkbmap us
+
+
+
+FIX VLC SIZZLING NOISE:
+-----------------------
+
 It's not just a problem with Skype, I believe it's a problem with, you've guessed it, PulseAudio.
 
 Workaround? Indeed there is.
