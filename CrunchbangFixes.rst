@@ -63,6 +63,6 @@ FIX VLC SIZZLING NOISE:
         me to have no sound ("dummy output" & no input). –  Filbuntu Oct 20 '12 at 2:37
 
 
-For the whole post Please Check:
+  For the whole post Please Check:
 
-  http://askubuntu.com/questions/157891/skype-and-vlc-sounds-sizzle-distorted-bad
+    http://askubuntu.com/questions/157891/skype-and-vlc-sounds-sizzle-distorted-bad
