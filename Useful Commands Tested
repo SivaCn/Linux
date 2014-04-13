@@ -27,8 +27,20 @@ Delete all pyc files in a project:
 
 Find All Machines on the same Network:
 
-  #!/bin/bash
-  for ip in 192.168.0.{1..254}; do
-    ping -c 1 -W 1 $ip | grep "64 bytes" &
-  done
+  Method I
+    #!/bin/bash
+    for ip in 192.168.0.{1..254}; do
+      ping -c 1 -W 1 $ip | grep "64 bytes" &
+    done
+
+  Method II
+    arp -a
+
+Get Hostname by IP
+
+  $ host <ip>
+
+Get IP address by Host Name
+
+  $ host <domain name>
 
