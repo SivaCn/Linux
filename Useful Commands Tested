@@ -22,11 +22,13 @@ find process that are listening or running on particular port:
 
 
 Delete all pyc files in a project:
+----------------------------------
 
   find . -name "*.pyc" -exec rm -f {} \;
 
 
 Find All Machines on the same Network:
+--------------------------------------
 
   Method I
     #!/bin/bash
@@ -38,15 +40,18 @@ Find All Machines on the same Network:
     arp -a
 
 Get Hostname by IP
+------------------
 
   $ host <ip>
 
 Get IP address by Host Name
+---------------------------
 
   $ host <domain name>
 
 
 JSON Pretty Print
+-----------------
 
   $ echo '{"foo": "lorem", "bar": "ipsum"}' | python -mjson.tool
 
