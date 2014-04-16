@@ -59,3 +59,9 @@ JSON Pretty Print
       "bar": "ipsum", 
       "foo": "lorem"
   }
+
+
+cd Command make case insensitive:
+---------------------------------
+
+  $ bind "set completion-ignore-case on"
