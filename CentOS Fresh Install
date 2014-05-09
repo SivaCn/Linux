@@ -1,0 +1,57 @@
+Update the CentOS
+-----------------
+  yum -y update
+
+
+Insatll Developement Tools
+--------------------------
+  yum groupinstall -y development
+
+
+Install Setuptools for Python
+-----------------------------
+  wget --no-check-certificate https://pypi.python.org/packages/source/s/setuptools/setuptools-1.4.2.tar.gz
+  # and install setup tools to the python
+
+
+Install pip
+-----------
+  curl https://raw.github.com/pypa/pip/master/contrib/get-pip.py | python2.6
+  # And install pip using the python
+
+
+Install Virtualenv
+------------------
+  pip install virtualenv
+
+
+Install and Configure tmux
+--------------------------
+  # download latest libevent2 and tmux sources, and extract them somewhere
+  # (thx bluejedi for tip on latest tmux URL)
+  #
+  # at the time of writing:
+  # https://github.com/downloads/libevent/libevent/libevent-2.0.21-stable.tar.gz
+  # http://sourceforge.net/projects/tmux/files/latest/download?source=files
+  # 
+   
+  # install deps
+  yum install gcc kernel-devel make ncurses-devel
+   
+  # cd to libevent2 src
+  ./configure --prefix=/usr/local
+  make && make install
+   
+  # cd to tmux src
+  LDFLAGS="-L/usr/local/lib -Wl,-rpath=/usr/local/lib" ./configure --prefix=/usr/local
+  make && make install
+   
+  # you're good to go, for a sample ~/.tmux.conf check out
+  # https://github.com/sturadnidge/misc/blob/master/.tmux.conf
+
+
+Setup Python Developement Environment:
+--------------------------------------
+  yum install python-devel
+  
+  yum install mysql-devel
