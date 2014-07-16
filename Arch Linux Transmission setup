@@ -1,0 +1,102 @@
+	
+
+    Setting up Transmission-cli on Archlinux ARM
+     
+    1-Install transmission-cli wich provides transmission-daemon
+     
+    # pacman -S transmission-cli
+     
+    2-Start the transmission daemon, as your regular user type:
+     
+    $ transmission-daemon
+     
+    3 - On a web browser type http://127.0.0.1:9091 to see the web client.
+     
+    4 - Stop the transmission-daemon, it's needed so changes to settings file can be saved.
+     
+    5 - Edit the configuration file
+     
+    $ vi /var/lib/transmission/.config/transmission-daemon/settings.json
+     
+    Important changes can be:
+     
+    "blocklist-enabled": false,
+    "blocklist-url": "http://www.example.com/blocklist",
+    "download-dir": "/var/lib/transmission/Downloads",
+    "pidfile": "/run/transmission/transmission.pid",
+    "rpc-authentication-required": false,
+    "rpc-bind-address": "0.0.0.0",
+    "rpc-enabled": true,
+    "rpc-password": "{634e22dd6343fb51a74b74183cfca5e9a1458f24yP/vrXE.",
+    "rpc-port": 9091,
+    "rpc-url": "/transmission/",
+    "rpc-username": "youruser",
+    "rpc-whitelist": "*.*.*.*",
+    "rpc-whitelist-enabled": false,
+     
+    Make sure user transmission has rw permissions on the Download-dir and also change permissions of the directory of pidfile
+     
+    # chmod -R 777 '/run/transmission'.
+     
+    6 - You can now start the transmission-daemon again to see the changes
+     
+    Normally the installation will create a user and group named transmssion, and the transmission-daemon will run as the user transmission, whose home directory is /var/lib/transmission/.
+     
+    And the configuration file is /var/lib/transmission/.config/transmission-daemon/settings.json.
+     
+    I) If you want to run transmission-daemon as your normal user (or any other user), stop the transmission-daemon.
+     
+    II) Start the transmission daemon, as your regular user type:
+     
+    $ transmission-daemon
+     
+    This will create the directory .config/transmission-daemon
+     
+    III) Set up your settings there:
+     
+    $ vi $HOME/.config/transmission-daemon/settings.json
+     
+    If you want to run transmission-daemon as a service in systemd
+     
+    Copy the service file and the tmpfile to systemd
+     
+    # cp /usr/lib/systemd/system/transmission.service /etc/systemd/system/
+    # cp /usr/lib/tmpfiles.d/transmission.conf /etc/tmpfiles.d/  
+     
+    Make sure the group transmission is created:
+     
+    # groupadd transmission  
+     
+    Add user to that group:
+     
+    # gpasswd -a [user] transmission  
+     
+    Change service file
+     
+    # vi /etc/systemd/system/transmission.service
+     
+    Change User= to your user
+     
+    Edit the tmpfile to the following:
+     
+    # vi /etc/tmpfiles.d/transmission.conf  
+     
+    /etc/tmpfiles.d/transmission.conf
+    d /run/transmission - [user] transmission -
+     
+    Make configurations:
+     
+    # systemd-tmpfiles --create transmission.conf
+     
+    Reload service files:
+     
+    # systemctl daemon-reload  
+     
+    You can now use transmission-daemon as a service in systemd
+     
+    # systemctl start transmission.service
+     
+    If you would use Transmission daemon with its own group, you have to give the writing permission to transmission group in your download's directory:
+     
+    # chgrp transmission /path/to/download # chmod g+w /path/to/download
+
