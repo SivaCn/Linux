@@ -1,0 +1,25 @@
+$cat ~/.config/terminator/config
+
+[global_config]
+[keybindings]
+[profiles]
+  [[default]]
+    scrollbar_position = hidden
+    use_system_font = False
+    font = Tlwg Typo Bold 12
+    background_image = None
+    scrollback_infinite = True
+  [[remotehost]]
+    use_custom_command = True
+    background_image = None
+    exit_action = restart
+    custom_command = ssh <user@machine>
+[layouts]
+  [[default]]
+    [[[child1]]]
+      type = Terminal
+      parent = window0
+    [[[window0]]]
+      type = Window
+      parent = ""
+[plugins]
