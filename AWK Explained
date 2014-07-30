@@ -1,0 +1,333 @@
+Be idiomatic!
+
+In this paragraph, we give some hints on how to write more idiomatic (and usually shorter and more efficient) awk programs. Many awk programs you're likely to encounter, especially short ones, make large use of these notions.
+
+Suppose one wants to print all the lines in a file that match some pattern (a kind of awk-grep, if you like). A reasonable first shot is usually something like
+
+awk '{if ($0 ~ /pattern/) print $0}'
+That works, but there are a number of things to note.
+
+The first thing to note is that it is not structured according to the awk's definition of a program, which is
+
+condition { actions }
+Our program can clearly be rewritten using this form, since both the condition and the action are very clear here:
+
+awk '$0 ~ /pattern/ {print $0}'
+Our next step in the perfect awk-ification of this program is to note that /pattern/ is the same as $0 ~ /pattern/. That is, when awk sees a single regular expression used as an expression, it implicitly applies it to $0, and returns success if there is a match. Then we have:
+
+awk '/pattern/ {print $0}'
+Now, let's turn our attention to the action part (what's inside braces). print $0 is a redundant statement, since print alone, by default, prints $0.
+
+awk '/pattern/ {print}'
+But now we note that, when it finds that a condition is true, and there are no associated actions, awk performs a default action that is (you guessed it) print (which we already know is equivalent to print $0). Thus we can do this:
+
+awk '/pattern/'
+Now we have reduced the initial program to its simplest (and more idiomatic) form. In many cases, if all you want to do is print some lines, according to a condition, you can write awk programs composed only of a condition (although complex):
+
+awk '(NR%2 && /pattern/) || (!(NR%2) && /anotherpattern/)'
+That prints odd lines that match /pattern/, or even lines that match /anotherpattern/. Naturally, if you don't want to print $0 but instead do something else, then you'll have to manually add a specific action to do what you want.
+
+From the above, it follows that
+
+awk 1
+awk '"a"'   # single quotes are important!
+are both awk programs that just print their input unchanged. Sometimes, you want to operate only on some lines of the input (according to some condition), but also want to print all the lines, regardless of whether they were affected by your operation or not. A typical example is a program like this:
+
+awk '{sub(/pattern/,"foobar")}1'
+This tries to replace "pattern" with "foobar". Whether or not the substitution succeeds, the always-true condition "1" prints each line (you could even use "42", or "19", or any other nonzero value if you want; "1" is just what people traditionally use). This results in a program that does the same job as sed 's/pattern/foobar/'. Here are some examples of typical awk idioms, using only conditions:
+
+awk 'NR % 6'            # prints all lines except those divisible by 6
+awk 'NR > 5'            # prints from line 6 onwards (like tail -n +6, or sed '1,5d')
+awk '$2 == "foo"'       # prints lines where the second field is "foo"
+awk 'NF >= 6'           # prints lines with 6 or more fields
+awk '/foo/ && /bar/'    # prints lines that match /foo/ and /bar/, in any order
+awk '/foo/ && !/bar/'   # prints lines that match /foo/ but not /bar/
+awk '/foo/ || /bar/'    # prints lines that match /foo/ or /bar/ (like grep -e 'foo' -e 'bar')
+awk '/foo/,/bar/'       # prints from line matching /foo/ to line matching /bar/, inclusive
+awk 'NF'                # prints only nonempty lines (or: removes empty lines, where NF==0)
+awk 'NF--'              # removes last field and prints the line
+awk '$0 = NR" "$0'      # prepends line numbers (assignments are valid in conditions)
+Another construct that is often used in awk is as follows:
+
+awk 'NR==FNR { # some actions; next} # other condition {# other actions}' file1 file2
+This is used when processing two files. When processing more than one file, awk reads each file sequentially, one after another, in the order they are specified on the command line. The special variable NR stores the total number of input records read so far, regardless of how many files have been read. The value of NR starts at 1 and always increases until the program terminates. Another variable, FNR, stores the number of records read from the current file being processed. The value of FNR starts from 1, increases until the end of the current file, starts again from 1 as soon as the first line of the next file is read, and so on. So, the condition "NR==FNR" is only true while awk is reading the first file. Thus, in the program above, the actions indicated by "# some actions" are executed when awk is reading the first file; the actions indicated by "# other actions" are executed when awk is reading the second file, if the condition in "# other condition" is met. The "next" at the end of the first action block is needed to prevent the condition in "# other condition" from being evaluated, and the actions in "# other actions" from being executed while awk is reading the first file.
+
+There are really many problems that involve two files that can be solved using this technique. Here are some examples:
+
+# prints lines that are both in file1 and file2 (intersection)
+awk 'NR==FNR{a[$0];next} $0 in a' file1 file2
+Here we see another typical idiom: a[$0] has the only purpose of creating the array element indexed by $0. During the pass over the first file, all the lines seen are remembered as indexes of the array a. The pass over the second file just has to check whether each line being read exists as an index in the array a (that's what the condition $0 in a does). If the condition is true, the line is printed (as we already know).
+
+Another example. Suppose we have a data file like this
+
+20081010 1123 xxx
+20081011 1234 def
+20081012 0933 xyz
+20081013 0512 abc
+20081013 0717 def
+...thousand of lines...
+where "xxx", "def", etc. are operation codes. We want to replace each operation code with its description. We have another file that maps operation codes to human readable descriptions, like this:
+
+abc withdrawal
+def payment
+xyz deposit
+xxx balance
+...other codes...
+We can easily replace the opcodes in the data file with this simple awk program, that again uses the two-files idiom:
+
+# use information from a map file to modify a data file
+awk 'NR==FNR{a[$1]=$2;next} {$3=a[$3]}1' mapfile datafile
+First, the array a, indexed by opcode, is populated with the human readable descriptions. Then, it is used during the reading of the second file to do the replacements. Each line of the datafile is then printed after the substitution has been made.
+
+Another case where the two-files idiom is useful is when you have to read the same file twice, the first time to get some information that can be correctly defined only by reading the whole file, and the second time to process the file using that information. For example, you want to replace each number in a list of numbers with its difference from the largest number in the list:
+
+# replace each number with its difference from the maximum
+awk 'NR==FNR{if($0>max) max=$0;next} {$0=max-$0}1' file file
+Note that we specify "file file" on the command line, so the file will be read twice.
+
+Caveat: all the programs that use the two-files idiom will not work correctly if the first file is empty (in that case, awk will execute the actions associated to NR==FNR while reading the second file). To correct that, you can reinforce the NR==FNR condition by adding a test that checks that also FILENAME equals ARGV[1].
+
+Pitfall: shorten pipelines
+
+It's not uncommon to see lines in scripts that look like this:
+
+somecommand | head -n +1 | grep foo | sed 's/foo/bar/' | tr '[a-z]' '[A-Z]' | cut -d ' ' -f 2
+This is just an example. In many cases, you can use awk to replace parts of the pipeline, or even all of it:
+
+somecommand | awk 'NR>1 && /foo/{sub(/foo/,"bar"); print toupper($2)}'
+It would be nice to collect here many examples of pipelines that could be partially or completely eliminated using awk.
+
+Print lines using ranges
+
+Yes, we all know that awk has builtin support for range expressions, like
+
+# prints lines from /beginpat/ to /endpat/, inclusive
+awk '/beginpat/,/endpat/'
+Sometimes however, we need a bit more flexibility. We might want to print lines between two patterns, but excluding the patterns themselves. Or only including one. A way is to use these:
+
+# prints lines from /beginpat/ to /endpat/, not inclusive
+awk '/beginpat/,/endpat/{if (!/beginpat/&&!/endpat/)print}'
+
+# prints lines from /beginpat/ to /endpat/, not including /beginpat/
+awk '/beginpat/,/endpat/{if (!/beginpat/)print}'
+It's easy to see that there must be a better way to do that, and in fact there is. We can use a flag to keep track of whether we are currently inside the interesting range or not, and print lines based on the value of the flag. Let's see how it's done:
+
+# prints lines from /beginpat/ to /endpat/, not inclusive
+awk '/endpat/{p=0};p;/beginpat/{p=1}'
+
+# prints lines from /beginpat/ to /endpat/, excluding /endpat/
+awk '/endpat/{p=0} /beginpat/{p=1} p'
+
+# prints lines from /beginpat/ to /endpat/, excluding /beginpat/
+awk 'p; /endpat/{p=0} /beginpat/{p=1}'
+All these programs just set p to 1 when /beginpat/ is seen, and set p to 0 when /endpat/ is seen. The crucial difference between them is where the bare "p" (the condition that triggers the printing of lines) is located. Depending on its position (at the beginning, in the middle, or at the end), different parts of the desired range are printed. To print the complete range (inclusive), you can just use the regular /beginpat/,/endpat/ expression or use the flag technique, but reversing the order of the conditions and associated patterns:
+
+# prints lines from /beginpat/ to /endpat/, inclusive
+awk '/beginpat/{p=1};p;/endpat/{p=0}'
+It goes without saying that while we are only printing lines here, the important thing is that we have a way of selecting lines within a range, so you can of course do anything you want instead of printing.
+
+Split file on patterns
+
+Suppose we have a file like this
+
+line1
+line2
+line3
+line4
+FOO1
+line5
+line6
+FOO2
+line7
+line8
+FOO3
+line9
+line10
+line11
+FOO4
+line12
+FOO5
+line13
+We want to split this file on all the occurrences of lines that match /^FOO/, and create a series of files called, for example, out1, out2, etc. File out1 will contain the first 4 lines, out2 will contain "line5" and "line6", etc. There are at least two ways to do that with awk:
+
+# first way, works with all versions of awk
+awk -v n=1 '/^FOO[0-9]*/{close("out"n);n++;next} {print > "out"n}' file
+Since we don't want to print anything when we see /^FOO/, but only update some administrative data, we use the "next" statement to tell awk to immediately start processing the next record. Lines that do not match /^FOO/ will instead be processed by the second block of code. Note that this method will not create empty files if an empty section is found (eg, if "FOO5\nFOO6" is found, the file "out5" will not be created). The "-v n=1" is used to tell awk that the variable "n" should be initialized with a value of 1, so effectively the first output file will be called "out1".
+
+Another way (which however needs GNU awk to work) is to read one chunk of data at a time, and write that to its corresponding out file.
+
+# another way, needs GNU awk
+LC_ALL=C gawk -v RS='FOO[0-9]*\n' -v ORS= '{print > "out"NR}' file
+The above code relies on the fact that GNU awk supports assigning a regular expression to RS (the standard only allows a single literal character or an empty RS). That way, awk reads a series of "records", separated by the regular expression matching /FOO[0-9]*\n/ (that is, the whole FOO... line). Since newlines are preserved in each section, we set ORS to empty since we don't want awk to add another newline at the end of a block. This method does create an empty file if an empty section is encountered. On the downside, it's a bit fragile because it will produce incorrect results if the regex used as RS appears somewhere else in the rest of the input.
+
+We will see other examples where gawk's support for regexes as RS is useful. Note that the last program used LC_ALL=C at the beginning...
+
+Locale-based pitfalls
+
+Sometimes awk can behave in an unexpected way if the locale is not C (or POSIX, which should be the same). See for example this input:
+
+-rw-r--r-- 1 waldner users 46592 2003-09-12 09:41 file1
+-rw-r--r-- 1 waldner users 11509 2008-10-07 17:42 file2
+-rw-r--r-- 1 waldner users 11193 2008-10-07 17:41 file3
+-rw-r--r-- 1 waldner users 19073 2008-10-07 17:45 file4
+-rw-r--r-- 1 waldner users 36332 2008-10-07 17:03 file5
+-rw-r--r-- 1 waldner users 33395 2008-10-07 16:53 file6
+-rw-r--r-- 1 waldner users 54272 2008-09-18 16:20 file7
+-rw-r--r-- 1 waldner users 20573 2008-10-07 17:50 file8
+You'll recognize the familiar output of ls -l here. Let's use a non-C locale, say, en_US.utf8, and try an apparently innocuous operation like removing the first 3 fields.
+
+$ LC_ALL=en_US.utf8 awk --re-interval '{sub(/^([^[:space:]]+[[:space:]]+){3}/,"")}1' file
+-rw-r--r-- 1 waldner users 46592 2003-09-12 09:41 file1
+-rw-r--r-- 1 waldner users 11509 2008-10-07 17:42 file2
+-rw-r--r-- 1 waldner users 11193 2008-10-07 17:41 file3
+-rw-r--r-- 1 waldner users 19073 2008-10-07 17:45 file4
+-rw-r--r-- 1 waldner users 36332 2008-10-07 17:03 file5
+-rw-r--r-- 1 waldner users 33395 2008-10-07 16:53 file6
+-rw-r--r-- 1 waldner users 54272 2008-09-18 16:20 file7
+-rw-r--r-- 1 waldner users 20573 2008-10-07 17:50 file8
+It looks like sub() did nothing. Now change that to use the C locale:
+
+$ LC_ALL=C awk --re-interval '{sub(/^([^[:space:]]+[[:space:]]+){3}/,"")}1' file
+users 46592 2003-09-12 09:41 file1
+users 11509 2008-10-07 17:42 file2
+users 11193 2008-10-07 17:41 file3
+users 19073 2008-10-07 17:45 file4
+users 36332 2008-10-07 17:03 file5
+users 33395 2008-10-07 16:53 file6
+users 54272 2008-09-18 16:20 file7
+users 20573 2008-10-07 17:50 file8
+Now it works. Another localization issue is the behavior of bracket expressions matching, like for example [a-z]:
+
+$ echo 'èòàù' | LC_ALL=en_US.utf8 awk '/[a-z]/'
+èòàù
+This may or may not be what you want. When in doubt or when facing an apparently inexplicable result, try putting LC_ALL=C before your awk invocation.
+
+Parse CSV
+
+Update: Mr. Waldner just notified me that he has improved this section of the article on his website. See "CVS Parsing With Awk".
+
+This is another thing people do all the time with awk. Simple CSV files (with fields separated by commas, and commas cannot appear anywhere else) are easily parsed using FS=','. There can be spaces around fields, and we don't want them, like eg
+
+    field1  ,   field2   , field3   , field4
+Exploiting the fact that FS can be a regex, we could try something like FS='^ *| *, *| *$'. This can be problematic for two reasons:
+
+actual data field might end up correponding either to awk's fields 1 ... NF or 2 ... NF, depending on whether the line has leading spaces or not;
+for some reason, assigning that regex to FS produces unexpected results if fields have embedded spaces (anybody knows why?).
+In this case, it's probably better to parse using FS=',' and remove leading and trailing spaces from each field:
+
+# FS=','
+for(i=1;i<=NF;i++){
+  gsub(/^ *| *$/,"",$i);
+  print "Field " i " is " $i;
+}
+Another common CSV format is
+
+"field1","field2","field3","field4"
+Assuming double quotes cannot occur in fields. This is easily parsed using FS='^"|","|"$' (or FS='","|"' if you like), keeping in mind that the actual fields will be in position 2, 3 ... NF-1. We can extend that FS to allow for spaces around fields, like eg
+
+   "field1"  , "field2",   "field3" , "field4"
+by using FS='^ *"|" *, *"|" *$'. Usable fields will still be in positions 2 ... NF-1. Unlike the previous case, here that FS regex seems to work fine. You can of course also use FS=',', and remove extra characters by hand:
+
+# FS=','
+for(i=1;i<=NF;i++){
+  gsub(/^ *"|" *$/,"",$i);
+  print "Field " i " is " $i;
+}
+Another CSV format is similar to the first CSV format above, but allows for field to contain commas, provided that the field is quoted:
+
+ field1, "field2,with,commas"  ,  field3  ,  "field4,foo"
+We have a mixture of quoted and unquoted fields here, which cannot parsed directly by any value of FS (that I know of, at least). However, we can still get the fields using match() in a loop (and cheating a bit):
+
+$0=$0",";                                  # yes, cheating
+while($0) {
+  match($0,/[^,]*,| *"[^"]*" *,/);            
+  sf=f=substr($0,RSTART,RLENGTH);          # save what matched in sf
+  gsub(/^ *"?|"? *,$/,"",f);               # remove extra stuff
+  print "Field " ++c " is " f;
+  sub(sf,"");                              # "consume" what matched
+}
+As the complexity of the format increases (for example when escaped quotes are allowed in fields), awk solutions become more fragile. Although I should not say this here, for anything more complex than the last example, I suggest using other tools (eg, Perl just to name one). Btw, it looks like there is an awk CSV parsing library here: http://lorance.freeshell.org/csv/ (I have not tried it).
+
+Pitfall: validate an IPv4 address
+
+Let's say we want to check whether a given string is a valid IPv4 address (for simplicity, we limit our discussion to IPv4 addresses in the traditiona dotted quad format here). We start with this seemingly valid program:
+
+awk -F '[.]' 'function ok(n){return (n>=0 && n<=255)} {exit (ok($1) && ok($2) && ok($3) && ok($4))}'
+This seems to work, until we pass it '123b.44.22c.3', which it happily accepts as valid. The fact is that, due to the way awk's number to string conversion works, some strings may "look like" numbers to awk, even if we know they are not. The correct thing to do here is to perform a string comparison against a regular expression:
+
+awk -F '[.]' 'function ok(n) {
+  return (n ~ /^([01]?[0-9]?[0-9]|2[0-4][0-9]|25[0-5])$/)
+}
+{exit (ok($1) && ok($2) && ok($3) && ok($4))}'
+Check whether two files contain the same data
+
+We want to check whether two (unsorted) files contain the same data, that is, the set of lines of the first file is the same set of lines of the second file. One way is of course sorting the two files and processing them with some other tool (for example, uniq or diff). But we want to avoid the relatively expensive sort operation. Can awk help us here? The answer (you guessed it) is yes. If we know that the two files do not contain duplicates, we can do this:
+
+awk '!($0 in a) {c++;a[$0]} END {exit(c==NR/2?0:1)}' file1 file2
+and check the return status of the command (0 if the files are equal, 1 otherwise). The assumption we made that the two files must not contain duplicate lines is crucial for the program to work correctly. In essence, what it does is to keep track of the number of different lines seen. If this number is exactly equal to half the number of total input records seen, then the two files must be equal (in the sense described above). To understand that, just realize that, in all other cases (ie, when a file is only a partial subset or is not a subset of the other), the total number of distinct lines seen will always be greater than NR/2.
+
+The program's complexity is linear in the number of input records.
+
+Pitfall: contexts and variable types in awk
+
+We have this file:
+
+1,2,3,,5,foo
+1,2,3,0,5,bar
+1,2,3,4,5,baz
+and we want to replace the last field with "X" only when the fourth field is not empty. We thus do this:
+
+awk -F ',' -v OFS=',' '{if ($4) $6="X"}1'
+But we see that the substitution only happens in the last line, instead of the last two as we expected. Why?
+
+Basically, there are only two data types in awk: strings and numbers. Internally, awk does not assign a fixed type to the variables; they are literally considered to be of type "number" and "string" at the same time, with the number 0 and the null string being equivalent. Only when a variable is used in the program, awk automatically converts it to the type it deems appropriate for the context. Some contexts strictly require a specific type; in that case, awk automatically converts the variable to that type and uses it. In contexts that does not require a specific type, awk treats variables that "look like" numbers as numbers, and the other variables are treated as strings. In out example above, the simple test "if ($4)" does not provide a specific context, since the tested variable can be anything. In the first line, $4 is an empty string, so awk considers it false for the purposes of the test. In the second line, $4 is "0". Since it look like a number, awk uses it like a number, ie zero. Since 0 is considered false, the test is unsuccessful and the substitution is not performed.
+
+Luckily, there is a way to help awk and tell it exactly what we want. We can use string concatenation and append an empty string to the variable (which does not change its value) to explicitly tell awk that we want it to treat it like a string, or, conversely, add 0 to the variable (again, without changing its value) to explicitly tell awk that we want a number. So this is how our program should be to work correctly:
+
+awk -F ',' -v OFS=',' '{if ($4"") $6="X"}1'   # the "" forces awk to evaluate the variable as a string
+With this change, in the second line the if sees the string "0", which is not considered false, and the test succeeds, just as we wanted.
+
+As said above, the reverse is also true. Another typical problematic program is this:
+
+awk '/foo/{tot++} END{print tot}'
+This, in the author's intention, should count the number of lines that match /foo/. But if /foo/ does not appear in the input, the variable tot retains its default initial value (awk initializes all variables with the dual value "" and 0). print expects a string argument, so awk supplies the value "". The result is that the program prints just an empty line. But we can force awk to treat the variable as numeric, by doing this:
+
+awk '/foo/{tot++} END{print tot+0}'
+The seemingly innocuous +0 has the effect of providing numeric context to the variable "tot", so awk knows it has to prefer the value 0 of the variable over the other possible internal value (the empty string). Then, numeric-to-string conversion still happens to satisfy print, but this time what awk converts to string is 0, so print sees the string "0" as argument, and prints it.
+
+Note that, if an explicit context has been provided to a variable, awk remembers that. That can lead to unexpected results:
+
+# input: 2.5943 10
+awk '{$1=sprintf("%d",$1);   # truncates decimals, but also explicitly turns $1 into a string!
+      if($1 > $2) print "something went wrong!" }          # this is printed
+Here, after the sprintf(), awk notes that we want $1 to be a string (in this case, "2"). Then, when we do if($1>$2), awk sees that $2 has no preferred type, while $1 does, so it converts $2 into a string (to match the wanted type of $1) and does a string comparison. Of course, 99.9999% of the times this is not what we want here. In this case, the problem is easily solved by doing "if ($1+0 > $2)" (doing $2+0 instead WON'T work!), doing "$1=$1+0" after the sprintf(), or using some other means to truncate the value of $1, that does not give it explicit string type.
+
+Pulling out things
+
+Suppose you have a file like this:
+
+Yesterday I was walking in =the street=, when I saw =a
+black dog=. There was also =a cat= hidden around there. =The sun= was shining, and =the sky= was blue.
+I entered =the
+music
+shop= and I bought two CDs. Then I went to =the cinema= and watched =a very nice movie=.
+End of the story.
+Ok, silly example, fair enough. But suppose that we want to print only and all the parts of that file that are like =something=. We have no knowledge of the structure of the file. The parts we're interested in might be anywere; they may span lines, or there can be many of them on a single line. This seemingly daunting and difficult task is actually easily accomplished with this small awk program:
+
+awk -v RS='=' '!(NR%2)'
+# awk -v RS='=' '!(NR%2){gsub(/\n/," ");print}'    # if you want to reformat embedded newlines
+Easy, wasn't it? Let's see how this works. Setting RS to '=' tells awk that records are separated by '=' (instead of the default newline character). If we look at the file as a series of records separated by '=', it becomes clear that what we want are the even-numbered records. So, just throw in a condition that is true for even-numbered records to trigger the printing.
+
+GNU awk can take this technique a step further, since it allows us to assign full regexes to RS, and introduces a companion variable (RT) that stores the part of the input that actually matched the regex in RS. This allows us, for example, to apply the previous technique when the interesting parts of the input are delimited by different characters or string, like for example when we want everything that matches <tag>something</tag>. With GNU awk, we can do this:
+
+gawk -v RS='</?tag>' 'RT=="</tag>"'
+or again
+
+gawk -v RS='</?tag>' '!(NR%2)'
+and be done with that. Another nice thing that can be done with GNU awk and RT is printing all the parts of a file that match an arbitrary regular expression (something otherwise usually not easily accomplished). Suppose that we want to print everything that looks like a number in a file (simplifiying, here any sequence of digits is considered a number, but of course this can be refined), we can do just this:
+
+gawk -v RS='[0-9]+' 'RT{print RT}'
+Checking that RT is not null is necessary because for the last record of a file RT is null, and an empty line would be printed in that case. The output produced by the previous program is similar to what can be obtained using grep -o. But awk can do better than that. We can use a slight variation of this same technique if we want to add context to our search (something grep -o alone cannot do). For example, let's say that we want to print all numbers, but only if they appear inside "--", eg like --1234--, and not otherwise. With gawk, we can do this:
+
+gawk -v RS='--[0-9]+--' 'RT{gsub(/--/,"",RT);print RT}'
+So, a carefully crafted RS selects only the "right" data, that can be subsequently extracted safely and printed.
