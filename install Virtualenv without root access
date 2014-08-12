@@ -20,6 +20,6 @@ $ ~/bin/python ez_setup.py -U setuptools
 
 $ ~/bin/easy_install virtualenv
 
-$ ~/bin/virtualenv . --no-site-packages
+$ ~/bin/virtualenv ./usr/ --no-site-packages
 
-$ source path/to/venv/bin/activate
+$ source <path to venv>/bin/activate
