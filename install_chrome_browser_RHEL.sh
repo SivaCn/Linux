@@ -1,5 +1,15 @@
 #! /bin/bash
 
+# ------------------------------------------------------------------
+# wget http://chrome.richardlloyd.org.uk/install_chrome.sh
+#
+# The above link is the source of truth where this script had been
+# copied from.
+#
+# chmod u+x install_chrome_browser_RHEL.sh
+# ./install_chrome.sh
+# ------------------------------------------------------------------
+
 # Google Chrome Installer/Uninstaller for RHEL/CentOS 6 or 7
 # (C) Richard K. Lloyd 2015 <rklloyd@gmail.com>
 # See http://chrome.richardlloyd.org.uk/ for further details.
