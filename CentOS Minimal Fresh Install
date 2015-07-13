@@ -5,3 +5,12 @@ dhclient -v eth0
 # Edit /etc/sysconfig/network-scripts/ifcfg-eth0 and add to the bottom:
 BOOTPROTO="dhcp"
 ONBOOT="yes"
+
+#
+# Install C Compiler (used to install source packages)
+yum install gcc-c++
+
+#
+# Install Dependencies For i3wm
+yum -y groupinstall "Development Tools"  
+yum -y install xcb-util-devel libxcb-devel xcb-proto libev-devel libxkbfile-devel libXcursor-devel libX11-devel yajl-devel bison flex asciidoc rxvt-unicode xorg-x11-apps dmenu xorg-x11-fonts-misc dzen2 startup-notification-devel pcre-devel alsa-lib-devel wireless-tools-devel libconfuse-devel 
