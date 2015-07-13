@@ -1,0 +1,7 @@
+#
+#
+# To cerate a working eth0 connection
+dhclient -v eth0
+# Edit /etc/sysconfig/network-scripts/ifcfg-eth0 and add to the bottom:
+BOOTPROTO="dhcp"
+ONBOOT="yes"
