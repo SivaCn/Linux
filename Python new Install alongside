@@ -2,12 +2,20 @@
 Preparations – install prerequisites
 ------------------------------------
 
-    1) For RPM based Distros
-        yum groupinstall "Development tools"
-        yum install zlib-devel bzip2-devel openssl-devel ncurses-devel sqlite-devel
-        yum install readline-devel tk-devel gdbm-devel db4-devel libpcap-devel xz-devel
+    1) For RPM based Distros (need to be logged in as root)
+        # yum update
+        # yum groupinstall "Development tools"
+        # yum install zlib-devel bzip2-devel openssl-devel ncurses-devel sqlite-devel
+        # yum install readline-devel tk-devel gdbm-devel db4-devel libpcap-devel xz-devel
 
-    2) For Debian based Distros
+    2) For Debian based Distros (need to be logged in as root)
+        # sudo apt update
+
+        Standard Developer Tools
+            # sudo apt-get install build-essential git
+
+        Python Development
+            # sudo apt-get install python-dev
 
 Download, compile and install Python
 ------------------------------------
